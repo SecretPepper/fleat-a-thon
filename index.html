@@ -15,8 +15,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:#fff}
  background:linear-gradient(112deg,rgba(15,7,25,.96),rgba(25,8,35,.95) 54%,rgba(8,15,30,.96));
  border:1px solid rgba(255,53,183,.78);
  box-shadow:0 0 0 1px rgba(100,237,255,.10),0 0 22px rgba(255,53,183,.17),0 0 48px rgba(100,237,255,.08),inset 0 0 40px rgba(100,50,130,.12);
- -webkit-clip-path:polygon(0 0,97.7% 0,100% 13%,100% 100%,2.3% 100%,0 87%);
-  clip-path:polygon(0 0,97.7% 0,100% 13%,100% 100%,2.3% 100%,0 87%);
+ clip-path:polygon(0 0,97.7% 0,100% 13%,100% 100%,2.3% 100%,0 87%);
 }
 .panel:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(255,255,255,.07) 6px)}
 .panel:after{content:"";position:absolute;left:0;top:0;width:100%;height:1px;background:linear-gradient(90deg,var(--pink),transparent 72%);opacity:.8}
@@ -27,8 +26,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:#fff}
  white-space:nowrap;color:#fff;text-transform:uppercase;
  text-shadow:2px 2px 0 #7b2c91,0 0 12px rgba(255,53,183,.35);
 }
-.vi-mark{position:relative;width:72px;height:46px;flex:none;filter:drop-shadow(0 2px 5px rgba(255,53,183,.35))}
-.vi-mark svg{display:block;width:100%;height:100%;overflow:visible}
+.vi-mark{position:relative;width:72px;height:46px;flex:none;filter:drop-shadow(0 2px 5px rgba(255,53,183,.35))}\n.vi-mark svg{display:block;width:100%;height:100%;overflow:visible}
 .vi-mark .v{
  position:absolute;inset:0 20px 0 0;
  background:linear-gradient(180deg,#3867d9 0%,#a94cbe 52%,#ff9a51 100%);
@@ -59,7 +57,11 @@ button{border:1px solid var(--cyan);background:linear-gradient(110deg,#6326a0,#b
 button.secondary{background:#21152d;border-color:var(--pink)}
 button:hover{filter:brightness(1.18)}
 #state{margin-top:18px;color:#bcaec8;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+ .obs-controls{position:fixed;right:14px;bottom:14px;z-index:20;display:flex;gap:6px;opacity:.08;transition:opacity .15s ease}
+.obs-controls:hover,.obs-controls:focus-within{opacity:1}
+.obs-controls button{min-width:0;padding:7px 10px;font-size:10px;letter-spacing:.08em}
 body.control-mode{background:#100719}
+body.control-mode .obs-controls{display:none}
 body.control-mode #overlay{display:none}
 body.control-mode #controller{display:block}
 @media(max-width:600px){
@@ -129,6 +131,11 @@ body.control-mode #controller{display:block}
   </section>
   <footer class="footer"><span>VICE CITY</span><span>THE LONG RUN</span></footer>
  </main>
+ <div class="obs-controls" aria-label="Timer controls">
+  <button id="overlay-start" type="button">Start</button>
+  <button id="overlay-pause" type="button">Pause</button>
+  <button id="overlay-reset" type="button">Reset</button>
+ </div>
 </div>
 <section id="controller">
  <h1>Fleat-A-Thon timer controls</h1>
@@ -143,24 +150,19 @@ body.control-mode #controller{display:block}
 <script>
 (()=>{
  const controlMode=new URLSearchParams(location.search).get('mode')==='control';
- if(controlMode)document.body.classList.add('control-mode');
- const clock=document.getElementById('clock'),state=document.getElementById('state');
- const channel=('BroadcastChannel'in window)?new BroadcastChannel('fleatathon-timer-text-vi'):null;
+ if(controlMode) document.body.classList.add('control-mode');
+ const clock=document.getElementById('clock'), state=document.getElementById('state');
  let elapsed=0,startedAt=0,running=false,ticker=null;
  const current=()=>elapsed+(running?Date.now()-startedAt:0);
- function render(){const t=Math.floor(current()/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;if(clock)clock.textContent=[h,m,s].map(n=>String(n).padStart(2,'0')).join(':')}
- function send(){if(channel)channel.postMessage({type:'timer-state',elapsed:current(),running});if(controlMode)state.textContent=running?'Timer running':'Timer paused'}
- function start(){if(running)return;running=true;startedAt=Date.now();ticker=setInterval(render,100);send()}
- function pause(){if(!running)return;elapsed=current();running=false;clearInterval(ticker);ticker=null;render();send()}
- function reset(){running=false;clearInterval(ticker);ticker=null;elapsed=0;startedAt=0;render();send();if(controlMode)state.textContent='Timer reset'}
- function apply(d){if(!d||d.type!=='timer-state'||typeof d.elapsed!=='number')return;clearInterval(ticker);ticker=null;elapsed=d.elapsed;running=!!d.running;startedAt=running?Date.now():0;if(running)ticker=setInterval(render,100);render()}
- if(controlMode){
-  document.getElementById('start').addEventListener('click',start);
-  document.getElementById('pause').addEventListener('click',pause);
-  document.getElementById('reset').addEventListener('click',reset);
-  document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();running?pause():start()}if(e.key.toLowerCase()==='r')reset()});
- }
- if(channel){channel.onmessage=e=>{if(e.data&&e.data.type==='timer-request'&&controlMode)send();else apply(e.data)};if(!controlMode)channel.postMessage({type:'timer-request'})}
+ function render(){const t=Math.floor(current()/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),sec=t%60;if(clock)clock.textContent=[h,m,sec].map(n=>String(n).padStart(2,'0')).join(':')}
+ function status(s){if(controlMode&&state)state.textContent=s}
+ function start(){if(running)return;running=true;startedAt=Date.now();ticker=setInterval(render,100);render();status('Timer running')}
+ function pause(){if(!running)return;elapsed=current();running=false;clearInterval(ticker);ticker=null;render();status('Timer paused')}
+ function reset(){running=false;clearInterval(ticker);ticker=null;elapsed=0;startedAt=0;render();status('Timer reset')}
+ const bind=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener('click',fn)};
+ bind('start',start);bind('pause',pause);bind('reset',reset);
+ bind('overlay-start',start);bind('overlay-pause',pause);bind('overlay-reset',reset);
+ document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();running?pause():start()}if(e.key&&e.key.toLowerCase()==='r')reset()});
  render();
 })();
 </script>
