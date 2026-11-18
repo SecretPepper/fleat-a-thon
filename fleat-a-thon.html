@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fleat-A-Thon GTA VI Timer</title>
+<style>
+:root{--pink:#ff35b7;--cyan:#64edff;--gold:#ffb23e;--violet:#55106e}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent}
+body{font-family:Arial,Helvetica,sans-serif;color:#fff}
+#overlay{height:100%;width:100%;display:flex;align-items:center;justify-content:center;padding:12px}
+.panel{
+ position:relative;width:min(960px,98vw);height:270px;overflow:hidden;
+ background:linear-gradient(112deg,rgba(15,7,25,.96),rgba(25,8,35,.95) 54%,rgba(8,15,30,.96));
+ border:1px solid rgba(255,53,183,.78);
+ box-shadow:0 0 0 1px rgba(100,237,255,.10),0 0 22px rgba(255,53,183,.17),0 0 48px rgba(100,237,255,.08),inset 0 0 40px rgba(100,50,130,.12);
+ clip-path:polygon(0 0,97.7% 0,100% 13%,100% 100%,2.3% 100%,0 87%);
+}
+.panel:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(255,255,255,.07) 6px)}
+.panel:after{content:"";position:absolute;left:0;top:0;width:100%;height:1px;background:linear-gradient(90deg,var(--pink),transparent 72%);opacity:.8}
+.header{height:74px;display:flex;align-items:center;padding:0 38px;position:relative;z-index:2;gap:13px}
+.brand-text{
+ font-family:Impact,"Arial Black",Arial,sans-serif;font-style:italic;
+ font-size:clamp(17px,2.5vw,25px);font-weight:900;letter-spacing:-.045em;
+ white-space:nowrap;color:#fff;text-transform:uppercase;
+ text-shadow:2px 2px 0 #7b2c91,0 0 12px rgba(255,53,183,.35);
+}
+.vi-mark{position:relative;width:72px;height:46px;flex:none;filter:drop-shadow(0 2px 5px rgba(255,53,183,.35))}\n.vi-mark svg{display:block;width:100%;height:100%;overflow:visible}
+.vi-mark .v{
+ position:absolute;inset:0 20px 0 0;
+ background:linear-gradient(180deg,#3867d9 0%,#a94cbe 52%,#ff9a51 100%);
+ clip-path:polygon(0 0,100% 0,54% 100%);
+}
+.vi-mark .v:after{content:"";position:absolute;inset:5px 5px 6px;background:#170a25;clip-path:polygon(0 0,100% 0,54% 100%)}
+.vi-mark .i{
+ position:absolute;right:0;top:0;width:18px;height:100%;
+ border-left:4px solid #ffb23e;border-right:4px solid #ffb23e;
+ background:linear-gradient(180deg,#3867d9 0%,#bb4bb5 55%,#ff9a51 100%);
+ box-shadow:0 0 0 2px #55106e,0 0 0 4px #ff35b7;
+}
+.divider{height:30px;width:1px;background:linear-gradient(transparent,var(--pink),transparent);flex:none;margin-left:3px}
+.event{font-size:14px;font-weight:900;letter-spacing:.24em;color:#f7e7f5;white-space:nowrap}
+.live{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:900;letter-spacing:.19em;color:var(--cyan);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--pink);box-shadow:0 0 10px var(--pink)}
+.clock-wrap{position:absolute;left:0;right:0;top:88px;text-align:center}
+#clock{font-family:Arial,Helvetica,sans-serif;font-size:clamp(64px,9.3vw,112px);font-weight:800;letter-spacing:.055em;line-height:1;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 0 8px rgba(255,255,255,.45),0 0 23px rgba(100,237,255,.36),4px 5px 0 rgba(255,53,183,.25)}
+.underline{width:315px;max-width:48%;height:2px;margin:17px auto 0;background:linear-gradient(90deg,transparent,var(--cyan),var(--pink),transparent);box-shadow:0 0 10px rgba(100,237,255,.36)}
+.sunset{position:absolute;right:8%;top:57px;width:126px;height:65px;opacity:.15;border-radius:90px 90px 0 0;background:repeating-linear-gradient(to bottom,#ff4ebc 0 5px,transparent 6px 10px);filter:drop-shadow(0 0 9px #ff4ebc)}
+.footer{position:absolute;left:38px;right:38px;bottom:24px;display:flex;justify-content:space-between;font-size:11px;font-weight:900;letter-spacing:.2em;color:#d8c7e3}
+.footer span:nth-child(2){color:#f0b4df}
+#controller{display:none;min-height:100%;padding:30px;background:#100719;color:#fff}
+#controller h1{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin:0 0 7px}
+#controller p{font-size:12px;color:#bcaec8;margin:0 0 22px}
+.controls{display:flex;gap:12px;flex-wrap:wrap}
+button{border:1px solid var(--cyan);background:linear-gradient(110deg,#6326a0,#b62b8e);color:white;padding:13px 22px;min-width:112px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+button.secondary{background:#21152d;border-color:var(--pink)}
+button:hover{filter:brightness(1.18)}
+#state{margin-top:18px;color:#bcaec8;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+body.control-mode{background:#100719}
+body.control-mode #overlay{display:none}
+body.control-mode #controller{display:block}
+@media(max-width:600px){
+ .panel{height:220px}
+ .header{height:62px;padding:0 18px;gap:9px}
+ .brand-text{font-size:clamp(14px,3.5vw,19px)}
+ .vi-mark{width:52px;height:34px}
+ .vi-mark .v{right:15px}
+ .vi-mark .i{width:13px;border-left-width:3px;border-right-width:3px}
+ .event{font-size:10px;letter-spacing:.15em}
+ .live{font-size:8px;gap:6px;letter-spacing:.12em}
+ .clock-wrap{top:78px}
+ #clock{font-size:clamp(43px,10vw,72px)}
+ .underline{margin-top:13px}
+ .footer{left:20px;right:20px;bottom:18px;font-size:8px;letter-spacing:.13em}
+ .sunset{right:6%;top:48px;transform:scale(.75)}
+}
+@media(max-width:420px){
+ .header{gap:6px;padding:0 14px}
+ .brand-text{font-size:13px}
+ .vi-mark{width:43px;height:29px}
+ .event{font-size:8px;letter-spacing:.1em}
+ .divider{margin-left:0}
+ .live{font-size:7px;letter-spacing:.08em}
+}
+</style>
+</head>
+<body>
+<div id="overlay">
+ <main class="panel">
+  <header class="header">
+   <div class="brand-text">Grand Theft Auto</div>
+   <div class="vi-mark" aria-label="GTA VI V and I emblem">
+    <svg viewBox="0 0 112 66" role="img" aria-label="GTA VI V and I emblem">
+      <defs>
+        <linearGradient id="gtaVFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3264d8"/>
+          <stop offset=".42" stop-color="#8b55c8"/>
+          <stop offset=".68" stop-color="#f044b8"/>
+          <stop offset="1" stop-color="#f39a4c"/>
+        </linearGradient>
+        <linearGradient id="gtaIFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3264d8"/>
+          <stop offset=".42" stop-color="#8b55c8"/>
+          <stop offset=".68" stop-color="#f044b8"/>
+          <stop offset="1" stop-color="#f39a4c"/>
+        </linearGradient>
+      </defs>
+      <!-- V: purple outer keyline, gold inner border, Vice City gradient -->
+      <path d="M3 3 H70 L39 62 Z" fill="#4b0870"/>
+      <path d="M8 7 H63 L39 53 Z" fill="#ffb333"/>
+      <path d="M12 11 H57 L39 45 Z" fill="url(#gtaVFill)"/>
+      <!-- I: matching framed vertical panel -->
+      <path d="M79 3 H109 V63 H79 Z" fill="#4b0870"/>
+      <path d="M82 7 H105 V59 H82 Z" fill="#ffb333"/>
+      <path d="M86 11 H101 V55 H86 Z" fill="url(#gtaIFill)"/>
+    </svg>
+  </div>
+   <div class="divider"></div>
+   <div class="event">FLEAT-A-THON</div>
+   <div class="live"><i class="dot"></i>LIVE TIMER</div>
+  </header>
+  <div class="sunset"></div>
+  <section class="clock-wrap">
+   <div id="clock">00:00:00</div>
+   <div class="underline"></div>
+  </section>
+  <footer class="footer"><span>VICE CITY</span><span>THE LONG RUN</span></footer>
+ </main>
+</div>
+<section id="controller">
+ <h1>Fleat-A-Thon timer controls</h1>
+ <p>Keep this page private. The viewer overlay updates automatically.</p>
+ <div class="controls">
+  <button id="start">Start</button>
+  <button id="pause" class="secondary">Pause</button>
+  <button id="reset" class="secondary">Reset</button>
+ </div>
+ <div id="state">Ready</div>
+</section>
+<script>
+(()=>{
+ const controlMode=new URLSearchParams(location.search).get('mode')==='control';
+ if(controlMode)document.body.classList.add('control-mode');
+ const clock=document.getElementById('clock'),state=document.getElementById('state');
+ const channel=('BroadcastChannel'in window)?new BroadcastChannel('fleatathon-timer-text-vi'):null;
+ let elapsed=0,startedAt=0,running=false,ticker=null;
+ const current=()=>elapsed+(running?Date.now()-startedAt:0);
+ function render(){const t=Math.floor(current()/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;if(clock)clock.textContent=[h,m,s].map(n=>String(n).padStart(2,'0')).join(':')}
+ function send(){if(channel)channel.postMessage({type:'timer-state',elapsed:current(),running});if(controlMode)state.textContent=running?'Timer running':'Timer paused'}
+ function start(){if(running)return;running=true;startedAt=Date.now();ticker=setInterval(render,100);send()}
+ function pause(){if(!running)return;elapsed=current();running=false;clearInterval(ticker);ticker=null;render();send()}
+ function reset(){running=false;clearInterval(ticker);ticker=null;elapsed=0;startedAt=0;render();send();if(controlMode)state.textContent='Timer reset'}
+ function apply(d){if(!d||d.type!=='timer-state'||typeof d.elapsed!=='number')return;clearInterval(ticker);ticker=null;elapsed=d.elapsed;running=!!d.running;startedAt=running?Date.now():0;if(running)ticker=setInterval(render,100);render()}
+ if(controlMode){
+  document.getElementById('start').addEventListener('click',start);
+  document.getElementById('pause').addEventListener('click',pause);
+  document.getElementById('reset').addEventListener('click',reset);
+  document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventDefault();running?pause():start()}if(e.key.toLowerCase()==='r')reset()});
+ }
+ if(channel){channel.onmessage=e=>{if(e.data&&e.data.type==='timer-request'&&controlMode)send();else apply(e.data)};if(!controlMode)channel.postMessage({type:'timer-request'})}
+ render();
+})();
+</script>
+</body>
+</html>
